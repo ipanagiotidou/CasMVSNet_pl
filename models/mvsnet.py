@@ -234,7 +234,7 @@ class CascadeMVSNet(nn.Module):
                 depth_lm1 = F.interpolate(rearrange(depth_lm1, 'b h w -> b 1 h w'),
                                           scale_factor=2, mode='bilinear',
                                           align_corners=True) # (B, 1, h, w)
-                depth_values = get_depth_values(depth_lm1, D, depth_interval_l)
+                depth_values = get_depth_values(depth_lm1, D, depth_interval_l)   # I: get_depth_values(current_depth, n_depths, depth_interval) # each level has its own n_depths[l], depth_interval and current depth is the depth of the previous level 
                 del depth_lm1
             depth_l, confidence_l = self.predict_depth(feats_l, proj_mats_l, depth_values,
                                                        getattr(self, f'cost_reg_{l}'))
