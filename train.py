@@ -101,7 +101,7 @@ class MVSSystem(LightningModule):
         imgs, proj_mats, depths, masks, init_depth_min, depth_interval = \
             self.decode_batch(batch)
         results = self(imgs, proj_mats, init_depth_min, depth_interval)   # I: from mvsnet.py the results are:  results[f"depth_{l}"] = depth_l, and results[f"confidence_{l}"] = confidence_l 
-        log['train/loss'] = loss = self.loss(results, depths, masks)
+        log['train/loss'] = loss = self.loss(results, depths, masks)      # I: στο loss ξεδιπλώνει τα results των 3 levels to sum the total loss of all 3 outputs.
         
         with torch.no_grad():
             if batch_nb == 0:
