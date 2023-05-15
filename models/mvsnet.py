@@ -122,7 +122,7 @@ class CascadeMVSNet(nn.Module):
                 cost_reg_l = CostRegNet(self.G, norm_act)
             else:
                 cost_reg_l = CostRegNet(8*2**l, norm_act) # I: in_channels = 8*2**l όπου για l= level = {0,1,2} έχουμε {8, 16, 32} αντίστοιχα.
-            setattr(self, f'cost_reg_{l}', cost_reg_l)    # I: και εδώ θέτει ως attribute του CascadeMVSNet τα 'cost_reg_0', 'cost_reg_1', και 'cost_reg_2', therefore του object που θα γίνει instantiated.
+            setattr(self, f'cost_reg_{l}', cost_reg_l)    # I: και εδώ θέτει ως attribute του CascadeMVSNet τα 'cost_reg_0', 'cost_reg_1', και 'cost_reg_2'. Later, retrieves it with getattr(self, f'cost_reg_{l}').
 
     def predict_depth(self, feats, proj_mats, depth_values, cost_reg):
         # feats: (B, V, C, H, W)
