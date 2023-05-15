@@ -13,7 +13,7 @@ class SL1Loss(nn.Module):
             depth_pred_l = inputs[f'depth_{l}']
             depth_gt_l = targets[f'level_{l}']
             mask_l = masks[f'level_{l}']
-            loss += self.loss(depth_pred_l[mask_l], depth_gt_l[mask_l]) * 2**(1-l)  # * loss weight of each stage
+            loss += self.loss(depth_pred_l[mask_l], depth_gt_l[mask_l]) * 2**(1-l)  # * loss weight of each level. For level = {0, 1, 2} we get the weights {2, 1, 1/2} respectively. Level_0 is the finest. 
         return loss
 
     
@@ -43,7 +43,7 @@ class CustomLoss():  # nn.Module
     # I: takes as input the 'Smooth' and 'Planar' Masks indicating which pixels belong to which object category. Then enforce a priori knowledge of these classes to smooth the depth. 
     def forward(self, inputs, targets, masks): 
         
-        # depth-groundtruth loss --> CasMVSNet 
+        # depth-groundtruth loss --> CasMVSNet (DDL-MVS combines ground-truth and smoothness term in one loss function)
         loss = 0
         for l in range(self.levels):
             depth_pred_l = inputs[f'depth_{l}']
