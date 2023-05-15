@@ -127,10 +127,10 @@ class CascadeMVSNet(nn.Module):
     def predict_depth(self, feats, proj_mats, depth_values, cost_reg):
         # feats: (B, V, C, H, W)
         # proj_mats: (B, V-1, 3, 4)
-        # depth_values: (B, D, H, W)
-        # cost_reg: nn.Module of input (B, C, D, h, w) and output (B, 1, D, h, w)
+        # depth_values: (B, D, H, W)    # I: for each Batch we have one volume of dimension (D, H, W) where D is the depth dimension and (H, W) the spatial dim.
+        # cost_reg: nn.Module of input (B, C, D, h, w) and output (B, 1, D, h, w)    # I: outputs one probability volume, B is the batch 
         B, V, C, H, W = feats.shape
-        D = depth_values.shape[1]
+        D = depth_values.shape[1]   # I: number of depth hypothesis
 
         ref_feats, src_feats = feats[:, 0], feats[:, 1:]
         src_feats = rearrange(src_feats, 'b vm1 c h w -> vm1 b c h w') # (V-1, B, C, h, w)
@@ -220,7 +220,7 @@ class CascadeMVSNet(nn.Module):
                                                 device=imgs.device,
                                                 dtype=imgs.dtype) # (D) # I: hypothesis depths # I: returns a 1-D tensor with values from [depth_min, depth_max). Step is depth_interval.
                     depth_values = rearrange(depth_values, 'd -> 1 d 1 1')
-                    depth_values = repeat(depth_values, '1 d 1 1 -> b d h w', b=B, h=h, w=w)  # Create B volume: repeat each depth hypothesis value along the spatial dimension. 
+                    depth_values = repeat(depth_values, '1 d 1 1 -> b d h w', b=B, h=h, w=w)  # B is the batch. Repeat for each batch: each depth hypothesis value is repeated along the spatial dimension. D acts as the number of channels.
                 else:
                     depth_values = init_depth_min + depth_interval_l * \
                                    rearrange(torch.arange(0, D,
@@ -236,7 +236,8 @@ class CascadeMVSNet(nn.Module):
                                           align_corners=True) # (B, 1, h, w)
                 depth_values = get_depth_values(depth_lm1, D, depth_interval_l)   # I: get_depth_values(current_depth, n_depths, depth_interval) # each level has its own n_depths[l], depth_interval and current depth is the depth of the previous level 
                 del depth_lm1
-                
+            
+            # I: when coarse level (l=2) the first time, we pass the B volumes with the initial depth hypothesis (depth_values).
             depth_l, confidence_l = self.predict_depth(feats_l, proj_mats_l, depth_values,
                                                        getattr(self, f'cost_reg_{l}'))
             del feats_l, proj_mats_l, depth_values
