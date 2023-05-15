@@ -121,7 +121,7 @@ class CascadeMVSNet(nn.Module):
             if self.G > 1:
                 cost_reg_l = CostRegNet(self.G, norm_act)
             else:
-                cost_reg_l = CostRegNet(8*2**l, norm_act)
+                cost_reg_l = CostRegNet(8*2**l, norm_act) # I: in_channels = 8*2**l όπου για l= level = {0,1,2} έχουμε {8, 16, 32} αντίστοιχα.
             setattr(self, f'cost_reg_{l}', cost_reg_l)
 
     def predict_depth(self, feats, proj_mats, depth_values, cost_reg):
