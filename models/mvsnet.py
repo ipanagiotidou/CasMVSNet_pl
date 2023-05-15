@@ -229,6 +229,7 @@ class CascadeMVSNet(nn.Module):
                                              'd -> 1 d') # (B, D)
                     depth_values = rearrange(depth_values, 'b d -> b d 1 1')
                     depth_values = repeat(depth_values, 'b d 1 1 -> b d h w', h=h, w=w)
+                    
             else:  # I: if not the coarsest level (to reach this point, first the network predicts the depth)
                 depth_lm1 = depth_l.detach() # the depth of previous level
                 depth_lm1 = F.interpolate(rearrange(depth_lm1, 'b h w -> b 1 h w'),
