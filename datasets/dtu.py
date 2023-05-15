@@ -65,13 +65,13 @@ class DTUDataset(Dataset):
 
             # multiply intrinsics and extrinsics to get projection matrix
             proj_mat_ls = []
-            for l in reversed(range(self.levels)):
+            for l in reversed(range(self.levels)): # values go from {2 --> 1 --> 0} 
                 proj_mat_l = np.eye(4)
                 proj_mat_l[:3, :4] = intrinsics @ extrinsics[:3, :4]
-                intrinsics[:2] *= 2 # 1/4->1/2->1   # doubles the upper two rows of the (3,3) intrinsic matrix. This affects (doubles) the focal length (1) and aspect ratio (2), shifts the principal point (3). 
+                intrinsics[:2] *= 2 # 1/4->1/2->1   # doubles the upper two rows of the (3,3) intrinsic matrix. This doubles the focal length (1) and aspect ratio (2), and shifts the principal point (3). 
                 proj_mat_ls += [torch.FloatTensor(proj_mat_l)]
             # (self.levels, 4, 4) from fine to coarse
-            proj_mat_ls = torch.stack(proj_mat_ls[::-1])
+            proj_mat_ls = torch.stack(proj_mat_ls[::-1])  # stacks from {0--> 1 --> 2} (from fine to coarse)
             proj_mats += [(proj_mat_ls, depth_min)]
 
         self.proj_mats = proj_mats
