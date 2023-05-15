@@ -218,9 +218,9 @@ class CascadeMVSNet(nn.Module):
                     depth_values = init_depth_min + depth_interval_l * \
                                    torch.arange(0, D,
                                                 device=imgs.device,
-                                                dtype=imgs.dtype) # (D) # I: hypothesis depths # I: returns a 1-D tensor with values from the interval [start, end) taken with common difference step. Here the step is the depth_interval_l. We offset with the init_depth_min.
+                                                dtype=imgs.dtype) # (D) # I: hypothesis depths # I: returns a 1-D tensor with values from [depth_min, depth_max). Step is depth_interval.
                     depth_values = rearrange(depth_values, 'd -> 1 d 1 1')
-                    depth_values = repeat(depth_values, '1 d 1 1 -> b d h w', b=B, h=h, w=w)  # repeat B times (B volumes created): create a volume with every depth hypothesis value repeated along the spatial dimension, and d hypothesis being different along the depth dimension. 
+                    depth_values = repeat(depth_values, '1 d 1 1 -> b d h w', b=B, h=h, w=w)  # Create B volume: repeat each depth hypothesis value along the spatial dimension. 
                 else:
                     depth_values = init_depth_min + depth_interval_l * \
                                    rearrange(torch.arange(0, D,
