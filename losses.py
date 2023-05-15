@@ -68,6 +68,7 @@ class CustomLoss():  # nn.Module
         # --> άρα για y = height έχουμε gradient_y(img): return img[:, :-1, :  , :] - img[:, 1:, : , :]
         # --> και για x = width  έχουμε gradient_x(img): return img[:, :  , :-1, :] - img[:, : , 1:, :]     
         
+        # I: see the dimensions of the predicted depth to index for the height and width.
         laplacian_depthy = torch.abs(2*refined_depth[f'stage_{l}'][:,:,1:-1,:] - refined_depth[f'stage_{l}'][:,:,:-2,:] - refined_depth[f'stage_{l}'][:,:,2:,:])
         laplacian_depthx = torch.abs(2*refined_depth[f'stage_{l}'][:,:,:,1:-1] - refined_depth[f'stage_{l}'][:,:,:,:-2] - refined_depth[f'stage_{l}'][:,:,:,2:])
 
