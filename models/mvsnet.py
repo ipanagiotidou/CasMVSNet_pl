@@ -106,6 +106,7 @@ class CostRegNet(nn.Module):
 
 class CascadeMVSNet(nn.Module):
     # I: the depth interval in CasMVSNet is set to [4, 2, 1] times as the interval of MVSNet (which is a fixed number). 
+    # I: depth interval for the finest level  = 2.65 mm (from opt.py)
     def __init__(self, n_depths=[8, 32, 48],
                        interval_ratios=[1, 2, 4],
                        num_groups=1,
