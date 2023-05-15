@@ -21,7 +21,7 @@ class SL1Loss(nn.Module):
 class CustomLoss():  # nn.Module
     """ 
     # I: idea: keep the same loss SL1Loss and make it more sophisticated. 
-    # I: --> New loss function consisting of 1) Depth-groundtruth loss, 2) Smoothness loss, 3) Planarity loss.
+    # I: --> New loss function consisting of 1) Depth-groundtruth loss, 2) Smoothness loss, 3) Planarity loss, with the last two being mutually exclusive. OR simply have the Planarity loss. 
     # I: 
     # I: --> Lgt = | depth_groundtruth - depth_predicted |  . This loss term measures the difference in depth maps between prediction and ground truth. --> L1 distance. 
     # I: --> Lsmooth = |  first order detivative of depth map | * exp(-| first order derivative of semantic map |) και 
@@ -43,19 +43,42 @@ class CustomLoss():  # nn.Module
     # I: takes as input the 'Smooth' and 'Planar' Masks indicating which pixels belong to which object category. Then enforce a priori knowledge of these classes to smooth the depth. 
     def forward(self, inputs, targets, masks): 
         
-        # depth-groundtruth loss --> CasMVSNet (DDL-MVS combines ground-truth and smoothness term in one loss function)
+        
         loss = 0
         for l in range(self.levels):
             depth_pred_l = inputs[f'depth_{l}']
             depth_gt_l = targets[f'level_{l}']
             mask_l = masks[f'level_{l}']
-            # I: smooth_mask_l stands for the mask indicating with 1s the pixels that belong to smooth classes
+            
+            # depth-groundtruth loss --> CasMVSNet (DDL-MVS combines ground-truth and smoothness term in one loss function)
+            loss += self.loss(depth_pred_l[mask_l], depth_gt_l[mask_l]) * 2**(1-l)
+            main_loss = loss 
+            
+            # semantic smoothness loss (for planar and non-planar surfaces)  --> TO DO: resize on the fly the planar mask to match the size of the output depth map of levels 1, 2. 
+            # dimensions of the predicted depth (B, h, w) --> index for the height and width.
+            laplacian_depthy = torch.abs(2*depth_pred_l[f'stage_{l}'][:,1:-1,:] - depth_pred_l[f'stage_{l}'][:,:-2,:] - depth_pred_l[f'stage_{l}'][:,2:,:])
+            laplacian_depthx = torch.abs(2*depth_pred_l[f'stage_{l}'][:,:,1:-1] - depth_pred_l[f'stage_{l}'][:,:,:-2] - depth_pred_l[f'stage_{l}'][:,:,2:])
+
+            BETA = -20.  # turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0 
+            tv_h = (mask_l[:,:,1:-1,:]*torch.abs(laplacian_depthy)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,1:-1,:])).sum()
+            tv_w = (mask_l[:,:,:,1:-1]*torch.abs(laplacian_depthx)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,:,1:-1])).sum()
+
+            TV2LOSS = 2.5*(tv_h + tv_w)/len(depth1) # 2500
+
+
+
+            
+                        # I: smooth_mask_l stands for the mask indicating with 1s the pixels that belong to smooth classes
             # I: planar_mask_l stands for the mask indicating with 1s the pixels that belong to planar classes
             # I: the first term is for the SMOOTH areas and the second for the PLANAR AREAS 
-            loss += self.loss(depth_pred_l[mask_l], depth_gt_l[mask_l]) * 2**(1-l)
-        main_loss = loss 
+            
         
-        # NOTE: I probably need to do the below for all stages 
+        
+        
+        # I: smooth_mask_l stands for the mask indicating with 1s the pixels that belong to smooth classes
+        # I: planar_mask_l stands for the mask indicating with 1s the pixels that belong to planar classes
+        # I: the first term is for the SMOOTH areas and the second for the PLANAR AREAS 
+        loss += self.loss(depth_pred_l[mask_l], depth_gt_l[mask_l]) * 2**(1-l)
         
         # semantic smoothness loss (for planar and non-planar surfaces) --> DDL-MVS (for Nail stage l=0 represents the finest input and output resolution)
         # I: semantic-aware smoothness loss term to penalize first-order and second-order depth varations in non-boundary regions for non-planar and planar surfaces respectively. 
@@ -68,17 +91,7 @@ class CustomLoss():  # nn.Module
         # --> άρα για y = height έχουμε gradient_y(img): return img[:, :-1, :  , :] - img[:, 1:, : , :]
         # --> και για x = width  έχουμε gradient_x(img): return img[:, :  , :-1, :] - img[:, : , 1:, :]     
         
-        # I: see the dimensions of the predicted depth to index for the height and width.
-        laplacian_depthy = torch.abs(2*refined_depth[f'stage_{l}'][:,:,1:-1,:] - refined_depth[f'stage_{l}'][:,:,:-2,:] - refined_depth[f'stage_{l}'][:,:,2:,:])
-        laplacian_depthx = torch.abs(2*refined_depth[f'stage_{l}'][:,:,:,1:-1] - refined_depth[f'stage_{l}'][:,:,:,:-2] - refined_depth[f'stage_{l}'][:,:,:,2:])
 
-        BETA = -20.  # turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0 
-        tv_h = (mask_l[:,:,1:-1,:]*torch.abs(laplacian_depthy)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,1:-1,:])).sum()
-        tv_w = (mask_l[:,:,:,1:-1]*torch.abs(laplacian_depthx)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,:,1:-1])).sum()
-       
-        TV2LOSS = 2.5*(tv_h + tv_w)/len(depth1) # 2500
-        
-        
         
         # I: semantic-aware planar loss term to penalize second-order depth variations in non-boundary regions
         
