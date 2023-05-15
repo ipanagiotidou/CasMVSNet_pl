@@ -49,6 +49,7 @@ class CustomLoss():  # nn.Module
             depth_pred_l = inputs[f'depth_{l}']
             depth_gt_l = targets[f'level_{l}']
             mask_l = masks[f'level_{l}']
+            # TO DO: add the semantic map 
             
             # depth-groundtruth loss --> CasMVSNet (DDL-MVS combines ground-truth and smoothness term in one loss function)
             loss += self.loss(depth_pred_l[mask_l], depth_gt_l[mask_l]) * 2**(1-l)
@@ -56,9 +57,11 @@ class CustomLoss():  # nn.Module
             
             # semantic smoothness loss (for planar and non-planar surfaces)  --> TO DO: resize on the fly the planar mask to match the size of the output depth map of levels 1, 2. 
             # dimensions of the predicted depth (B, h, w) --> index for the height and width.
-            laplacian_depthy = torch.abs(2*depth_pred_l[f'stage_{l}'][:,1:-1,:] - depth_pred_l[f'stage_{l}'][:,:-2,:] - depth_pred_l[f'stage_{l}'][:,2:,:])
-            laplacian_depthx = torch.abs(2*depth_pred_l[f'stage_{l}'][:,:,1:-1] - depth_pred_l[f'stage_{l}'][:,:,:-2] - depth_pred_l[f'stage_{l}'][:,:,2:])
-
+            laplacian_depthy = torch.abs(2*depth_pred_l[:,1:-1,:] - depth_pred_l[:,:-2,:] - depth_pred_l[:,2:,:])
+            laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])
+            
+            # TO DO: calculate the Laplace of the semantic map 
+            
             BETA = -20.  # turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0 
             tv_h = (mask_l[:,:,1:-1,:]*torch.abs(laplacian_depthy)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,1:-1,:])).sum()
             tv_w = (mask_l[:,:,:,1:-1]*torch.abs(laplacian_depthx)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,:,1:-1])).sum()
