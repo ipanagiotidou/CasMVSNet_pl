@@ -51,7 +51,7 @@ class DTUDataset(Dataset):
     def build_proj_mats(self):
         proj_mats = []
         for vid in range(49): # total 49 view ids
-            if self.img_wh is None:
+            if self.img_wh is None: # I: when we train it is None 
                 proj_mat_filename = os.path.join(self.root_dir,
                                                  f'Cameras/train/{vid:08d}_cam.txt')
             else:
@@ -68,10 +68,10 @@ class DTUDataset(Dataset):
             for l in reversed(range(self.levels)): # values go from {2 --> 1 --> 0} 
                 proj_mat_l = np.eye(4)
                 proj_mat_l[:3, :4] = intrinsics @ extrinsics[:3, :4]
-                intrinsics[:2] *= 2 # 1/4->1/2->1   # doubles the upper two rows of the (3,3) intrinsic matrix. This doubles the focal length (1) and aspect ratio (2), and shifts the principal point (3). 
+                intrinsics[:2] *= 2 # 1/4->1/2->1   # I: doubles the upper two rows of the (3,3) intrinsic matrix. This doubles the focal length (1) and aspect ratio (2), and shifts the principal point (3). 
                 proj_mat_ls += [torch.FloatTensor(proj_mat_l)]
             # (self.levels, 4, 4) from fine to coarse
-            proj_mat_ls = torch.stack(proj_mat_ls[::-1])  # stacks from {0--> 1 --> 2} (from fine to coarse)
+            proj_mat_ls = torch.stack(proj_mat_ls[::-1])  # I: stacks from {0--> 1 --> 2} (from fine to coarse)
             proj_mats += [(proj_mat_ls, depth_min)]
 
         self.proj_mats = proj_mats
@@ -91,10 +91,10 @@ class DTUDataset(Dataset):
 
     def read_depth(self, filename):
         depth = np.array(read_pfm(filename)[0], dtype=np.float32) # (1200, 1600)
-        if self.img_wh is None:
+        if self.img_wh is None: # I: when we train it is None 
             depth = cv2.resize(depth, None, fx=0.5, fy=0.5,
-                            interpolation=cv2.INTER_NEAREST) # (600, 800)
-            depth_0 = depth[44:556, 80:720] # (512, 640)
+                            interpolation=cv2.INTER_NEAREST) # (600, 800)   # I: with resizing the number of pixels gets smaller (half here, from 1200 to 600 in one dimension). The image becomes smaller but the FOV remains the same. 
+            depth_0 = depth[44:556, 80:720] # (512, 640)                    # I: we crop it. The image resolution is set to (640 x 512).
         else:
             depth_0 = cv2.resize(depth, self.img_wh,
                                  interpolation=cv2.INTER_NEAREST)
@@ -111,7 +111,7 @@ class DTUDataset(Dataset):
 
     def read_mask(self, filename):
         mask = cv2.imread(filename, 0) # (1200, 1600)
-        if self.img_wh is None:
+        if self.img_wh is None: # when we train it is None 
             mask = cv2.resize(mask, None, fx=0.5, fy=0.5,
                             interpolation=cv2.INTER_NEAREST) # (600, 800)
             mask_0 = mask[44:556, 80:720] # (512, 640)
