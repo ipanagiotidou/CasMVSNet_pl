@@ -129,6 +129,46 @@ class DTUDataset(Dataset):
 
         return masks
 
+    def read_semantic(self, filename):
+        mask = cv2.imread(filename, 0) # (1200, 1600)
+        if self.img_wh is None: # when we train it is None 
+            mask = cv2.resize(mask, None, fx=0.5, fy=0.5,
+                            interpolation=cv2.INTER_NEAREST) # (600, 800)
+            mask_0 = mask[44:556, 80:720] # (512, 640)
+        else:
+            mask_0 = cv2.resize(mask, self.img_wh,
+                                interpolation=cv2.INTER_NEAREST)
+        mask_1 = cv2.resize(mask_0, None, fx=0.5, fy=0.5,
+                            interpolation=cv2.INTER_NEAREST)
+        mask_2 = cv2.resize(mask_1, None, fx=0.5, fy=0.5,
+                            interpolation=cv2.INTER_NEAREST)
+
+        semantics = {"level_0": torch.BoolTensor(mask_0),
+                 "level_1": torch.BoolTensor(mask_1),
+                 "level_2": torch.BoolTensor(mask_2)}
+
+        return semantics   
+    
+    def read_planar_mask(self, filename):
+        mask = cv2.imread(filename, 0) # (1200, 1600)
+        if self.img_wh is None: # when we train it is None 
+            mask = cv2.resize(mask, None, fx=0.5, fy=0.5,
+                            interpolation=cv2.INTER_NEAREST) # (600, 800)
+            mask_0 = mask[44:556, 80:720] # (512, 640)
+        else:
+            mask_0 = cv2.resize(mask, self.img_wh,
+                                interpolation=cv2.INTER_NEAREST)
+        mask_1 = cv2.resize(mask_0, None, fx=0.5, fy=0.5,
+                            interpolation=cv2.INTER_NEAREST)
+        mask_2 = cv2.resize(mask_1, None, fx=0.5, fy=0.5,
+                            interpolation=cv2.INTER_NEAREST)
+
+        planar_masks = {"level_0": torch.BoolTensor(mask_0),
+                 "level_1": torch.BoolTensor(mask_1),
+                 "level_2": torch.BoolTensor(mask_2)}
+
+        return planar_masks    
+        
     def define_transforms(self):
         if self.split == 'train': # you can add augmentation here
             self.transform = T.Compose([T.ToTensor(),
