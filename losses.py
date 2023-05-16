@@ -65,10 +65,9 @@ class CustomLoss():  # nn.Module
             laplacian_semanticx = torch.abs(2*semantic_map[:,:,1:-1] - semantic_map[:,:,:-2] - semantic_map[:,:,2:])
             
             # Applying the Laplacian operator to the semantic map to identify the edges and then use it as following guarantees that only non-boundary regions contribute to the Loss.
-            # what is the response of the Laplacian operator and how can I use it to switch on or off the loss.
-            BETA = -20.  # turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0, οπότε λογικά το 
-            tv_h = (mask_l[:,:,1:-1,:]*torch.abs(laplacian_depthy)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,1:-1,:])).sum() # mask_l indicates the valid pixels 
-            tv_w = (mask_l[:,:,:,1:-1]*torch.abs(laplacian_depthx)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,:,1:-1])).sum() # mask_l indicates the valid pixels 
+            # Question: what is the response of the Laplacian operator and how can I use it to switch on or off the loss. --> DDL-MVS uses BETA = -20 which turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0. 
+            tv_h = (mask_l[:,:,1:-1,:]*torch.abs(laplacian_depthy)*torch.exp(laplacian_semanticy[:,:,1:-1,:])).sum() # mask_l indicates the valid pixels 
+            tv_w = (mask_l[:,:,:,1:-1]*torch.abs(laplacian_depthx)*torch.exp(laplacian_semanticx[f'stage_{l}'][:,:,:,1:-1])).sum() # mask_l indicates the valid pixels 
 
             # multiply the loss term with the planar_mask to filter out pixels with no need to contribute to the Loss. 
             TV2LOSS = 2.5*(tv_h + tv_w)/len(depth1) # 2500
