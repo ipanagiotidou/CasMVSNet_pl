@@ -48,9 +48,9 @@ class CustomLoss(nn.Module):
             loss += 2**(1-l) * nn.SmoothL1Loss(depth1, depth2, reduction="mean")  # reduction='mean': the sum of the output will be divided by the number of elements in the output            
             MAIN_LOSS = loss
             
+            # based on DDL-MVS
             # semantic smoothness loss to encourage local smoothness for planar regions WITHOUT depth discontinuities (penalize second-order depth variations)
-            # --> dimensions of the predicted depth is (B, h, w)              
-            # based on DDL-MVS 
+            # --> dimensions of the predicted depth is (B, h, w)                           
             laplacian_depthy = torch.abs(2*depth_pred_l[:,1:-1,:] - depth_pred_l[:,:-2,:] - depth_pred_l[:,2:,:])   # [:,1:-1,:] discards the first and last row 
             laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])   # [:,:,1:-1] discards the first and last col
             
