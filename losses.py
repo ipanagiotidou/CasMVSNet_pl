@@ -32,17 +32,16 @@ class CustomLoss():  # nn.Module
                  depth_pred,
                  depth_gt,
                  mask,
-                 semantic_map,                                  
+                 semantic_map,  
+                 planar_mask,
                  ): # example of type 'depth_gt: Dict[str, torch.Tensor]'
         
         # super(SL1Loss, self).__init__()
         self.levels = levels
         self.loss = nn.SmoothL1Loss(reduction='mean') 
     
-
-    # I: takes as input the 'Smooth' and 'Planar' Masks indicating which pixels belong to which object category. Then enforce a priori knowledge of these classes to smooth the depth. 
-    def forward(self, inputs, targets, masks): 
-        
+    
+    def forward(self, inputs, targets, masks):         
         
         loss = 0
         for l in range(self.levels):
@@ -55,37 +54,29 @@ class CustomLoss():  # nn.Module
             loss += self.loss(depth_pred_l[mask_l], depth_gt_l[mask_l]) * 2**(1-l)
             main_loss = loss 
             
-            # semantic smoothness loss (for planar and non-planar surfaces)  --> TO DO: resize on the fly the planar mask to match the size of the output depth map of levels 1, 2. 
-            # dimensions of the predicted depth (B, h, w) --> index for the height and width.
+            # semantic smoothness loss to encourage local smoothness for planar regions WITHOUT depth discontinuities (penalize second-order depth variations)
+            # --> dimensions of the predicted depth is (B, h, w) --> index for the height and width.
+            # --> TO DO: resize on the fly the planar mask to match the size of the output depth map of levels 1, 2.             
+            # DDL-MVS 
             laplacian_depthy = torch.abs(2*depth_pred_l[:,1:-1,:] - depth_pred_l[:,:-2,:] - depth_pred_l[:,2:,:])
             laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])
             
-            # TO DO: calculate the Laplace of the semantic map 
+            # --> TO DO: apply the Laplacian operator to the semantic map  
+            # NOTE: the semantic map can be turned to a binary indicating planar or non-planar areas. This will act as a mask to filter out pixels that we don't want them to contribute to the Loss. (P = 1 - S)
+            laplacian_semanticy = torch.abs(2*semantic_map[:,1:-1,:] - semantic_map[:,:-2,:] - semantic_map[:,2:,:])
+            laplacian_semanticx = torch.abs(2*semantic_map[:,:,1:-1] - semantic_map[:,:,:-2] - semantic_map[:,:,2:])
             
+            # Applying the Laplacian to the semantic map you guarantee that only the non-boundary regions contribute to the Loss.
             BETA = -20.  # turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0 
             tv_h = (mask_l[:,:,1:-1,:]*torch.abs(laplacian_depthy)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,1:-1,:])).sum()
             tv_w = (mask_l[:,:,:,1:-1]*torch.abs(laplacian_depthx)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,:,1:-1])).sum()
 
+            # multiply the loss term with the planar_mask to filter out pixels with no need to contribute to the Loss. 
             TV2LOSS = 2.5*(tv_h + tv_w)/len(depth1) # 2500
 
 
-
-            
-                        # I: smooth_mask_l stands for the mask indicating with 1s the pixels that belong to smooth classes
-            # I: planar_mask_l stands for the mask indicating with 1s the pixels that belong to planar classes
-            # I: the first term is for the SMOOTH areas and the second for the PLANAR AREAS 
             
         
-        
-        
-        # I: smooth_mask_l stands for the mask indicating with 1s the pixels that belong to smooth classes
-        # I: planar_mask_l stands for the mask indicating with 1s the pixels that belong to planar classes
-        # I: the first term is for the SMOOTH areas and the second for the PLANAR AREAS 
-        loss += self.loss(depth_pred_l[mask_l], depth_gt_l[mask_l]) * 2**(1-l)
-        
-        # semantic smoothness loss (for planar and non-planar surfaces) --> DDL-MVS (for Nail stage l=0 represents the finest input and output resolution)
-        # I: semantic-aware smoothness loss term to penalize first-order and second-order depth varations in non-boundary regions for non-planar and planar surfaces respectively. 
-        # I: Only the non-boundary regions contribute to the Loss. The boundary regions do not contribute to the loss. 
         
         # laplacian is the second-order derivative (for x and y) 
         # --> check Unsupervised MVSNet to undestand the gradients: https://github.com/ipanagiotidou/unsup_mvs/blob/master/code/unsup_mvsnet/model.py 
