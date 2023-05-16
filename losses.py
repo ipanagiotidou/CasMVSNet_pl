@@ -56,18 +56,18 @@ class CustomLoss():  # nn.Module
             # --> dimensions of the predicted depth is (B, h, w) --> index and slice the height and width dimensions.
             # --> TO DO: resize on the fly the planar mask to match the size of the output depth map of levels 1, 2.             
             # DDL-MVS 
-            laplacian_depthy = torch.abs(2*depth_pred_l[:,1:-1,:] - depth_pred_l[:,:-2,:] - depth_pred_l[:,2:,:])   # [:,1:-1,:] discard the first and last row 
-            laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])   # [:,:,1:-1] discard the first and last col
+            laplacian_depthy = torch.abs(2*depth_pred_l[:,1:-1,:] - depth_pred_l[:,:-2,:] - depth_pred_l[:,2:,:])   # [:,1:-1,:] discards the first and last row 
+            laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])   # [:,:,1:-1] discards the first and last col
             
             # --> TO DO: apply the Laplacian operator to the semantic map  
-            # NOTE: the semantic map can be turned to a binary indicating planar or non-planar areas. This will act as a mask to filter out pixels that we don't want them to contribute to the Loss. (P = 1 - S)
+            # NOTE: the planar_mask indicates planar regions and filters out pixels with no need to contribute to the Loss.
             laplacian_semanticy = torch.abs(2*semantic_map[:,1:-1,:] - semantic_map[:,:-2,:] - semantic_map[:,2:,:])
             laplacian_semanticx = torch.abs(2*semantic_map[:,:,1:-1] - semantic_map[:,:,:-2] - semantic_map[:,:,2:])
             
-            # Applying the Laplacian to the semantic map you guarantee that only non-boundary regions contribute to the Loss.
+            # Applying the Laplacian to the semantic map guarantees that only non-boundary regions contribute to the Loss.
             BETA = -20.  # turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0 
-            tv_h = (laplace_depth_mask_l[:,:,1:-1,:]*torch.abs(laplacian_depthy)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,1:-1,:])).sum()
-            tv_w = (laplace_depth_mask_l[:,:,:,1:-1]*torch.abs(laplacian_depthx)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,:,1:-1])).sum()
+            tv_h = (mask_l[:,:,1:-1,:]*torch.abs(laplacian_depthy)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,1:-1,:])).sum() # mask_l indicates the valid pixels 
+            tv_w = (mask_l[:,:,:,1:-1]*torch.abs(laplacian_depthx)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,:,1:-1])).sum() # mask_l indicates the valid pixels 
 
             # multiply the loss term with the planar_mask to filter out pixels with no need to contribute to the Loss. 
             TV2LOSS = 2.5*(tv_h + tv_w)/len(depth1) # 2500
