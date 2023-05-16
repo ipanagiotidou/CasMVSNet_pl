@@ -52,11 +52,11 @@ class CustomLoss(nn.Module):
             # semantic smoothness loss to encourage local smoothness for planar regions WITHOUT depth discontinuities (penalize second-order depth variations)
             # --> dimensions of the predicted depth is (B, h, w)                           
             laplacian_depthy = torch.abs(2*depth_pred_l[:,1:-1,:] - depth_pred_l[:,:-2,:] - depth_pred_l[:,2:,:])   # [:,1:-1,:] discards the first and last row 
-            laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])   # [:,:,1:-1] discards the first and last col
+            laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])   # [:,:,1:-1] discards the first and last col    
             
             # apply the Positive Laplacian operator (takes out outward edges) to the semantic map  
             laplacian_semanticy = torch.abs(2*semantic_map_l[:,1:-1,:] - semantic_map_l[:,:-2,:] - semantic_map_l[:,2:,:])
-            laplacian_semanticx = torch.abs(2*semantic_map_l[:,:,1:-1] - semantic_map_l[:,:,:-2] - semantic_map_l[:,:,2:])
+            laplacian_semanticx = torch.abs(2*semantic_map_l[:,:,1:-1] - semantic_map_l[:,:,:-2] - semantic_map_l[:,:,2:])    
             
             # Applying the Laplacian operator to the semantic map to identify the edges and then use it as following guarantees that only non-boundary regions contribute to the Loss.            
             # multiply with the valid and planar mask to filter out invalid and non-planar pixels respectively
@@ -67,8 +67,7 @@ class CustomLoss(nn.Module):
             tv_w = (planar_mask_l[:,:,:,1:-1] * mask_l[:,:,:,1:-1] * torch.abs(laplacian_depthx) * torch.exp(-torch.abs(laplacian_semanticx[:,:,:,1:-1]))).sum() 
             
             SMOOTH_LOSS += 2**(1-l) * (tv_h + tv_w)/len(depth1) # divided by the number of pixels of the image. 
-            
-        
+                    
                                                     
         # total loss 
         loss = 2 * loss  + 1 * SMOOTH_LOSS
