@@ -143,9 +143,9 @@ class DTUDataset(Dataset):
         mask_2 = cv2.resize(mask_1, None, fx=0.5, fy=0.5,
                             interpolation=cv2.INTER_NEAREST)
         
-        semantics = {"level_0": torch.FloatTensor(mask_0),
-                     "level_1": torch.FloatTensor(mask_1),
-                     "level_2": torch.FloatTensor(mask_2)}  # TO DO: fix in case it needs to be an integer Tensor? 
+        semantics = {"level_0": torch.ByteTensor(mask_0),
+                     "level_1": torch.ByteTensor(mask_1),
+                     "level_2": torch.ByteTensor(mask_2)}       # 8-bit integer (unsigned)
 
         return semantics   
     
