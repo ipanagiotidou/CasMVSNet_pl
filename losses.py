@@ -55,11 +55,11 @@ class CustomLoss():  # nn.Module
             main_loss = loss 
             
             # semantic smoothness loss to encourage local smoothness for planar regions WITHOUT depth discontinuities (penalize second-order depth variations)
-            # --> dimensions of the predicted depth is (B, h, w) --> index for the height and width.
+            # --> dimensions of the predicted depth is (B, h, w) --> index and slice the height and width dimensions.
             # --> TO DO: resize on the fly the planar mask to match the size of the output depth map of levels 1, 2.             
             # DDL-MVS 
-            laplacian_depthy = torch.abs(2*depth_pred_l[:,1:-1,:] - depth_pred_l[:,:-2,:] - depth_pred_l[:,2:,:])
-            laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])
+            laplacian_depthy = torch.abs(2*depth_pred_l[:,1:-1,:] - depth_pred_l[:,:-2,:] - depth_pred_l[:,2:,:])   # [:,1:-1,:] cuts the first and last row 
+            laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])   # [:,:,1:-1] cuts the first and last col
             
             # --> TO DO: apply the Laplacian operator to the semantic map  
             # NOTE: the semantic map can be turned to a binary indicating planar or non-planar areas. This will act as a mask to filter out pixels that we don't want them to contribute to the Loss. (P = 1 - S)
