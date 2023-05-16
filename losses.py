@@ -55,16 +55,14 @@ class CustomLoss(nn.Module):
             laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])   # [:,:,1:-1] discards the first and last col
             
             # apply the Positive Laplacian operator (takes out outward edges) to the semantic map  
-            # NOTE: the planar_mask indicates planar regions and filters out pixels with no need to contribute to the Loss.
             laplacian_semanticy = torch.abs(2*semantic_map_l[:,1:-1,:] - semantic_map_l[:,:-2,:] - semantic_map_l[:,2:,:])
             laplacian_semanticx = torch.abs(2*semantic_map_l[:,:,1:-1] - semantic_map_l[:,:,:-2] - semantic_map_l[:,:,2:])
             
             # Applying the Laplacian operator to the semantic map to identify the edges and then use it as following guarantees that only non-boundary regions contribute to the Loss.            
-            # multiply the loss term with the mask to filter out invalid pixels (pixels for which we don't know their depth ground truth value). 
-            # multiply the loss term with the planar_mask to filter out pixels that do not belong to planar regions, therefore there is no need to contribute to the Loss. 
+            # multiply with the valid and planar mask to filter out invalid and non-planar pixels respectively
             # NOTE: the Laplacian operator can produce both positive and negative values in the response image, thus the absolute values are taken.
-            # NOTE: By taking the absolute values, edges will have higher values in the response image, while non-edge areas will have values close to zero.
-            # QUESTION: Should I turn the laplacian response to a binary image for yes-no edges to control the switch on and off the contribution to the loss? -> DDL-MVS uses BETA = -20 which turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0.
+            # NOTE: in the response image, edges will have higher values while non-edge pixels will have values close to zero.
+            # QUESTION: Should I turn the laplacian response to a binary image with 1s and 0s for edges, non-edges and then use BETA to control the switch on and off the contribution to the loss? -> DDL-MVS uses BETA = -20 which turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0.
             tv_h = (planar_mask_l[:,:,1:-1,:] * mask_l[:,:,1:-1,:] * torch.abs(laplacian_depthy) * torch.exp(-torch.abs(laplacian_semanticy[:,:,1:-1,:]))).sum() # mask_l indicates the valid pixels, planar_mask_l indicates the planar pixels 
             tv_w = (planar_mask_l[:,:,:,1:-1] * mask_l[:,:,:,1:-1] * torch.abs(laplacian_depthx) * torch.exp(-torch.abs(laplacian_semanticx[:,:,:,1:-1]))).sum() 
             
