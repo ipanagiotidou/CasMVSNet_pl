@@ -38,7 +38,7 @@ class CustomLoss(nn.Module):
             depth_pred_l = inputs[f'depth_{l}']
             depth_gt_l = targets[f'level_{l}']
             mask_l = masks[f'level_{l}']
-            semantic_map_l = semantic_maps[f'level_{l}']
+            semantic_map_l = semantics[f'level_{l}']
             planar_mask_l = planar_masks[f'level_{l}']
             
             depth1 = depth_pred_l[mask_l]
