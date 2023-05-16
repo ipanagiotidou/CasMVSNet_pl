@@ -31,14 +31,14 @@ class CustomLoss(nn.Module):
         super(CustomLoss, self).__init__()  # will call the __init__ function as seen by the parent class of CustomLoss 
         self.levels = levels               
         
-    def forward(self, inputs, targets, masks, semantic_maps, planar_masks):      
+    def forward(self, inputs, targets, masks, semantics, planar_masks):      
         
         loss = 0
         for l in range(self.levels):
             depth_pred_l = inputs[f'depth_{l}']
             depth_gt_l = targets[f'level_{l}']
             mask_l = masks[f'level_{l}']
-            semantic_map_l = semantics[f'level_{l}']
+            semantic_l = semantics[f'level_{l}']
             planar_mask_l = planar_masks[f'level_{l}']
             
             depth1 = depth_pred_l[mask_l]
@@ -55,8 +55,8 @@ class CustomLoss(nn.Module):
             laplacian_depthx = torch.abs(2*depth_pred_l[:,:,1:-1] - depth_pred_l[:,:,:-2] - depth_pred_l[:,:,2:])   # [:,:,1:-1] discards the first and last col    
             
             # apply the Positive Laplacian operator (takes out outward edges) to the semantic map  
-            laplacian_semanticy = torch.abs(2*semantic_map_l[:,1:-1,:] - semantic_map_l[:,:-2,:] - semantic_map_l[:,2:,:])
-            laplacian_semanticx = torch.abs(2*semantic_map_l[:,:,1:-1] - semantic_map_l[:,:,:-2] - semantic_map_l[:,:,2:])    
+            laplacian_semanticy = torch.abs(2*semantic_l[:,1:-1,:] - semantic_l[:,:-2,:] - semantic_l[:,2:,:])
+            laplacian_semanticx = torch.abs(2*semantic_l[:,:,1:-1] - semantic_l[:,:,:-2] - semantic_l[:,:,2:])    
             
             # Applying the Laplacian operator to the semantic map to identify the edges and then use it as following guarantees that only non-boundary regions contribute to the Loss.            
             # multiply with the valid and planar mask to filter out invalid and non-planar pixels respectively
