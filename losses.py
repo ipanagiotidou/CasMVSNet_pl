@@ -21,11 +21,9 @@ class SL1Loss(nn.Module):
 class CustomLoss():  # nn.Module
     """ 
     # I: idea: keep the same loss SL1Loss and make it more sophisticated. 
-    # I: --> New loss function consisting of 1) Depth-groundtruth loss, 2) Smoothness loss, 3) Planarity loss, with the last two being mutually exclusive. OR simply have the Planarity loss. 
-    # I: 
-    # I: --> Lgt = | depth_groundtruth - depth_predicted |  . This loss term measures the difference in depth maps between prediction and ground truth. --> L1 distance. 
-    # I: --> Lsmooth = |  first order detivative of depth map | * exp(-| first order derivative of semantic map |) και 
-    # I: --> Lplanar = | second order derivative of depth map | * exp(-| ????? order derivative of semantic map |)
+    # I: --> New loss function consisting of 1) Depth-groundtruth loss, 2) Smoothness loss for planar regions    
+    # I: --> Lgt = | depth_groundtruth[valid_mask] - depth_predicted[valid_mask] |  . This loss term measures the difference in depth maps between prediction and ground truth. --> L1 distance.    
+    # I: --> Lplanar = valid_mask * planar_mask * | second order derivative of depth map | * exp(-| second order derivative of semantic map |)
     """ 
     
     def __init__(self, levels=3):  # super(SL1Loss, self).__init__()
