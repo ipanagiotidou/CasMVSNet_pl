@@ -43,8 +43,8 @@ class CustomLoss():  # nn.Module
             depth_pred_l = inputs[f'depth_{l}']
             depth_gt_l = targets[f'level_{l}']
             mask_l = masks[f'level_{l}']
-            semantic_l = semantic_maps
-            planar_mask = planar_masks
+            semantic_map_l = semantic_maps[f'level_{l}']
+            planar_mask_l = planar_masks[f'level_{l}']
             
             # TO DO: add the semantic map 
             
@@ -61,13 +61,13 @@ class CustomLoss():  # nn.Module
             
             # --> TO DO: apply the Laplacian operator to the semantic map  
             # NOTE: the planar_mask indicates planar regions and filters out pixels with no need to contribute to the Loss.
-            laplacian_semanticy = torch.abs(2*semantic_map[:,1:-1,:] - semantic_map[:,:-2,:] - semantic_map[:,2:,:])
-            laplacian_semanticx = torch.abs(2*semantic_map[:,:,1:-1] - semantic_map[:,:,:-2] - semantic_map[:,:,2:])
+            laplacian_semanticy = torch.abs(2*semantic_map_l[:,1:-1,:] - semantic_map_l[:,:-2,:] - semantic_map_l[:,2:,:])
+            laplacian_semanticx = torch.abs(2*semantic_map_l[:,:,1:-1] - semantic_map_l[:,:,:-2] - semantic_map_l[:,:,2:])
             
             # Applying the Laplacian operator to the semantic map to identify the edges and then use it as following guarantees that only non-boundary regions contribute to the Loss.
             # Question: what is the response of the Laplacian operator and how can I use it to switch on or off the loss. --> DDL-MVS uses BETA = -20 which turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0. 
-            tv_h = (mask_l[:,:,1:-1,:]*torch.abs(laplacian_depthy)*torch.exp(laplacian_semanticy[:,:,1:-1,:])).sum() # mask_l indicates the valid pixels 
-            tv_w = (mask_l[:,:,:,1:-1]*torch.abs(laplacian_depthx)*torch.exp(laplacian_semanticx[f'stage_{l}'][:,:,:,1:-1])).sum() # mask_l indicates the valid pixels 
+            tv_h = (planar_mask_l[:,:,1:-1,:] * mask_l[:,:,1:-1,:] * torch.abs(laplacian_depthy) * torch.exp(laplacian_semanticy[:,:,1:-1,:])).sum()               # mask_l indicates the valid pixels, planar_mask_l indicates the planar pixels 
+            tv_w = (planar_mask_l[:,:,:,1:-1] * mask_l[:,:,:,1:-1] * torch.abs(laplacian_depthx) * torch.exp(laplacian_semanticx[:,:,:,1:-1])).sum() 
 
             # multiply the loss term with the planar_mask to filter out pixels with no need to contribute to the Loss. 
             TV2LOSS = 2.5*(tv_h + tv_w)/len(depth1) # 2500
