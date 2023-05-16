@@ -58,6 +58,8 @@ class MVSSystem(LightningModule):
         masks = batch['masks']
         init_depth_min = batch['init_depth_min']
         depth_interval = batch['depth_interval']
+        semantics = batch['semantics']         # newly added
+        planar_masks = batch['planar_masks']   # newly added
         return imgs, proj_mats, depths, masks, init_depth_min, depth_interval
 
     def forward(self, imgs, proj_mats, init_depth_min, depth_interval):
@@ -98,10 +100,9 @@ class MVSSystem(LightningModule):
     
     def training_step(self, batch, batch_nb):
         log = {'lr': get_learning_rate(self.optimizer)}
-        imgs, proj_mats, depths, masks, init_depth_min, depth_interval = \
-            self.decode_batch(batch)
+        imgs, proj_mats, depths, masks, init_depth_min, depth_interval, semantics, planar_masks = self.decode_batch(batch)
         results = self(imgs, proj_mats, init_depth_min, depth_interval)   # I: from mvsnet.py the results are:  results[f"depth_{l}"] = depth_l, and results[f"confidence_{l}"] = confidence_l 
-        log['train/loss'] = loss = self.loss(results, depths, masks)      # I: στο loss ξεδιπλώνει τα results των 3 levels to sum the total loss of all 3 outputs.
+        log['train/loss'] = loss = self.loss(results, depths, masks, semantics, planar_masks)      # I: στο loss ξεδιπλώνει τα results των 3 levels to sum the total loss of all 3 outputs.
         
         with torch.no_grad():
             if batch_nb == 0:
@@ -128,10 +129,9 @@ class MVSSystem(LightningModule):
 
     def validation_step(self, batch, batch_nb):
         log = {}
-        imgs, proj_mats, depths, masks, init_depth_min, depth_interval = \
-            self.decode_batch(batch)
+        imgs, proj_mats, depths, masks, init_depth_min, depth_interval, semantics, planar_masks = self.decode_batch(batch)
         results = self(imgs, proj_mats, init_depth_min, depth_interval)
-        log['val_loss'] = self.loss(results, depths, masks)
+        log['val_loss'] = self.loss(results, depths, masks, semantics, planar_masks)
     
         if batch_nb == 0:
             img_ = self.unpreprocess(imgs[0,0]).cpu() # batch 0, ref image
