@@ -18,7 +18,7 @@ class SL1Loss(nn.Module):
 
     
 # New custom loss function    
-class CustomLoss():  # nn.Module
+class CustomLoss(nn.Module):  
     """ 
     # idea: keep the same loss SL1Loss and make it more sophisticated. 
     # New loss function consisting of 1) Depth-groundtruth loss, 2) Smoothness loss for planar regions    
@@ -27,10 +27,9 @@ class CustomLoss():  # nn.Module
     # Total_Loss = Lgt + Lplanar 
     """ 
     
-    def __init__(self, levels=3):  # super(SL1Loss, self).__init__()
-        self.levels = levels
-        self.loss = nn.SmoothL1Loss(reduction='mean') 
-        
+    def __init__(self, levels=3):  
+        super(CustomLoss, self).__init__()
+        self.levels = levels               
         
     def forward(self, inputs, targets, masks, semantic_maps, planar_masks):      
         
@@ -41,10 +40,13 @@ class CustomLoss():  # nn.Module
             mask_l = masks[f'level_{l}']
             semantic_map_l = semantic_maps[f'level_{l}']
             planar_mask_l = planar_masks[f'level_{l}']
+            
+            depth1 = depth_pred_l[mask_l]
+            depth2 = depth_gt_l[mask_l]
                         
             # depth-groundtruth loss --> CasMVSNet (DDL-MVS combines ground-truth and smoothness term in one loss function)
-            main_loss += self.loss(depth_pred_l[mask_l], depth_gt_l[mask_l]) * 2**(1-l)
-            
+            loss += 2**(1-l) * nn.SmoothL1Loss(depth1, depth2, reduction="mean")  # reduction='mean': the sum of the output will be divided by the number of elements in the output            
+            MAIN_LOSS = loss
             
             # semantic smoothness loss to encourage local smoothness for planar regions WITHOUT depth discontinuities (penalize second-order depth variations)
             # --> dimensions of the predicted depth is (B, h, w)              
@@ -66,15 +68,14 @@ class CustomLoss():  # nn.Module
             tv_h = (planar_mask_l[:,:,1:-1,:] * mask_l[:,:,1:-1,:] * torch.abs(laplacian_depthy) * torch.exp(-torch.abs(laplacian_semanticy[:,:,1:-1,:]))).sum() # mask_l indicates the valid pixels, planar_mask_l indicates the planar pixels 
             tv_w = (planar_mask_l[:,:,:,1:-1] * mask_l[:,:,:,1:-1] * torch.abs(laplacian_depthx) * torch.exp(-torch.abs(laplacian_semanticx[:,:,:,1:-1]))).sum() 
             
-            TV2LOSS = 2.5*(tv_h + tv_w)/len(depth1) # 2500
+            SMOOTH_LOSS += 2**(1-l) * (tv_h + tv_w)/len(depth1) # divided by the number of pixels of the image. 
             
         
-                                        
-            
-        # total loss
-        loss = 2*main_loss  + ... 
+                                                    
+        # total loss 
+        loss = 2 * loss  + 1 * SMOOTH_LOSS
         
-        print("TOTAL LOSS ",loss," MAIN LOSS ",main_loss," EDGEL2SIM ",EDGEL2SIM, " TV2LOSS ",TV2LOSS," BIMODAL_LOSS ",BIMODAL_LOSS)
+        print("TOTAL LOSS ",loss," MAIN LOSS ",MAIN_LOSS," SMOOTH_LOSS ",SMOOTH_LOSS)
         
         return loss          
     
