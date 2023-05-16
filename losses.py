@@ -66,7 +66,7 @@ class CustomLoss():  # nn.Module
             laplacian_semanticy = torch.abs(2*semantic_map[:,1:-1,:] - semantic_map[:,:-2,:] - semantic_map[:,2:,:])
             laplacian_semanticx = torch.abs(2*semantic_map[:,:,1:-1] - semantic_map[:,:,:-2] - semantic_map[:,:,2:])
             
-            # Applying the Laplacian to the semantic map you guarantee that only the non-boundary regions contribute to the Loss.
+            # Applying the Laplacian to the semantic map you guarantee that only non-boundary regions contribute to the Loss.
             BETA = -20.  # turns exp(-20 * 0) = exp(0) = 1 and exp(-20 * 1) = 0 
             tv_h = (mask_l[:,:,1:-1,:]*torch.abs(laplacian_depthy)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,1:-1,:])).sum()
             tv_w = (mask_l[:,:,:,1:-1]*torch.abs(laplacian_depthx)*torch.exp(BETA*edges_est[f'stage_{l}'][:,:,:,1:-1])).sum()
