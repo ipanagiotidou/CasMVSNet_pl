@@ -28,7 +28,7 @@ class CustomLoss(nn.Module):
     """ 
     
     def __init__(self, levels=3):  
-        super(CustomLoss, self).__init__()
+        super(CustomLoss, self).__init__()  # will call the __init__ function as seen by the parent class of CustomLoss 
         self.levels = levels               
         
     def forward(self, inputs, targets, masks, semantic_maps, planar_masks):      
