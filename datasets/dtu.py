@@ -144,8 +144,8 @@ class DTUDataset(Dataset):
                             interpolation=cv2.INTER_NEAREST)
 
         semantics = {"level_0": torch.BoolTensor(mask_0),
-                 "level_1": torch.BoolTensor(mask_1),
-                 "level_2": torch.BoolTensor(mask_2)}
+                     "level_1": torch.BoolTensor(mask_1),
+                     "level_2": torch.BoolTensor(mask_2)}
 
         return semantics   
     
@@ -164,8 +164,8 @@ class DTUDataset(Dataset):
                             interpolation=cv2.INTER_NEAREST)
 
         planar_masks = {"level_0": torch.BoolTensor(mask_0),
-                 "level_1": torch.BoolTensor(mask_1),
-                 "level_2": torch.BoolTensor(mask_2)}
+                        "level_1": torch.BoolTensor(mask_1),
+                        "level_2": torch.BoolTensor(mask_2)}
 
         return planar_masks    
         
@@ -195,12 +195,12 @@ class DTUDataset(Dataset):
         for i, vid in enumerate(view_ids):
             # NOTE that the id in image file names is from 1 to 49 (not 0~48)
             if self.img_wh is None:
-                img_filename = os.path.join(self.root_dir,
-                                f'Rectified/{scan}_train/rect_{vid+1:03d}_{light_idx}_r5000.png')
-                mask_filename = os.path.join(self.root_dir,
-                                f'Depths/{scan}/depth_visual_{vid:04d}.png')
-                depth_filename = os.path.join(self.root_dir,
-                                f'Depths/{scan}/depth_map_{vid:04d}.pfm')
+                img_filename = os.path.join(self.root_dir, f'Rectified/{scan}_train/rect_{vid+1:03d}_{light_idx}_r5000.png')
+                mask_filename = os.path.join(self.root_dir, f'Depths/{scan}/depth_visual_{vid:04d}.png')
+                depth_filename = os.path.join(self.root_dir, f'Depths/{scan}/depth_map_{vid:04d}.pfm')
+                # QUESTION: do I want to infer different semantics for every image with different lighting conditions? 
+                semantic_filename = os.path.join(self.root_dir, f'Semantics/{scan}_train/sem_{vid+1:03d}_3_r5000.png')        # one semantic map per viewpoint. 
+                planar_mask_filename = os.path.join(self.root_dir, f'Semantics/{scan}_train/planar_{vid+1:03d}_3_r5000.png') 
             else:
                 img_filename = os.path.join(self.root_dir,
                                 f'Rectified/{scan}/rect_{vid+1:03d}_{light_idx}_r5000.png')
@@ -218,6 +218,8 @@ class DTUDataset(Dataset):
                 if self.img_wh is None:
                     sample['masks'] = self.read_mask(mask_filename)
                     sample['depths'] = self.read_depth(depth_filename)
+                    sample['semantics'] = self.read_semantic(depth_filename)
+                    sample['planar_masks'] = self.read_planar_mask(depth_filename)                                        
                 ref_proj_inv = torch.inverse(proj_mat_ls)
             else:
                 proj_mats += [proj_mat_ls @ ref_proj_inv]
