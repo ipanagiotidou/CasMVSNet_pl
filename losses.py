@@ -79,5 +79,5 @@ class CustomLoss(nn.Module):
         
         return loss          
     
-    
+# dictionary with choices for loss     
 loss_dict = {'sl1': SL1Loss, 'custom_loss': CustomLoss}
