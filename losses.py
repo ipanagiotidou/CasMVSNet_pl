@@ -73,27 +73,9 @@ class CustomLoss():  # nn.Module
 
             # multiply the loss term with the planar_mask to filter out pixels with no need to contribute to the Loss. 
             TV2LOSS = 2.5*(tv_h + tv_w)/len(depth1) # 2500
-
-
             
         
-        
-        # laplacian is the second-order derivative (for x and y) 
-        # --> check Unsupervised MVSNet to undestand the gradients: https://github.com/ipanagiotidou/unsup_mvs/blob/master/code/unsup_mvsnet/model.py 
-        # example για Tensor με dimensions: [ ..? , y = height, x = width, ..? ]  
-        # για το gradient του image έχουμε: 
-        # --> άρα για y = height έχουμε gradient_y(img): return img[:, :-1, :  , :] - img[:, 1:, : , :]
-        # --> και για x = width  έχουμε gradient_x(img): return img[:, :  , :-1, :] - img[:, : , 1:, :]     
-        
-
-        
-        # I: semantic-aware planar loss term to penalize second-order depth variations in non-boundary regions
-        
-        
-        
-        
-        
-        
+                                        
             
         # total loss
         loss = 2*loss  + ... 
