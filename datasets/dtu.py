@@ -65,10 +65,9 @@ class DTUDataset(Dataset):
                 intrinsics[0] *= self.img_wh[0]/1600/4       # I: dividing the img_width (current image width)/ 1600 (original image width) calculates the scaling factor by which the current image differs from the refence image (0.5 for example). 
                 intrinsics[1] *= self.img_wh[1]/1200/4       # I: dividing again with a scaling factor of 4 it suggests that the current image has been downscaled 4 times compared to the reference width. 
                 
-                # Info: the camera parameters (intrinsics) are known for image of size HxW. If I want to use a smaller image, say H/2, W/2 (half of the original), then ... 
-                # ... I need to multiply the first two rows of K matrix (params: focal lenght, and principal point) by the downscaling factor of 0.5 in this case. 
-                # Θυμήσου το σχήμα όπου αν απομακρυνθεί το image plane από το principal point 2 φορές (scaling factor = 2), τότε τόσο το focal length μεγαλώνει κατά 2 και οι συντεταγμένες του σημείου απομακρύνονται από την αρχή των αξόνων του image plane.   
-                # Αντίστοιχα, αν μικρύνεις την απόσταση από το image plane, και το focal length και η απόσταση από την αρχή των αξόνων μικραίνει. 
+                # I: Intrinsic camera parameters for resized images: 
+                # I: Rescale the intrinsic matrix. For example, if the original camera image is 1280 x 960 and resized image is 320 x 240, the ratio is 1/4 and the focal length and principal point is scaled so.
+                # Αν απομακρυνθεί το image plane από το principal point 2 φορές (scaling factor = 2), τότε τόσο το focal length μεγαλώνει κατά 2 και οι συντεταγμένες του σημείου απομακρύνονται από την αρχή των αξόνων του image plane.   
                 
 
             # multiply intrinsics and extrinsics to get projection matrix
