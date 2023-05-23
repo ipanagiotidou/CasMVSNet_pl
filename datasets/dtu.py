@@ -64,6 +64,8 @@ class DTUDataset(Dataset):
                 # This operation adjusts the intrinsic matrix by scaling its values based on the downscaling factors. It ensures that the intrinsics remain consistent with the current image size. 
                 intrinsics[0] *= self.img_wh[0]/1600/4       # I: dividing the img_width (current image width)/ 1600 (original image width) calculates the scaling factor by which the current image differs from the refence image (0.5 for example). 
                 intrinsics[1] *= self.img_wh[1]/1200/4       # I: dividing again with a scaling factor of 4 it suggests that the current image has been downscaled 4 times compared to the reference width. 
+                # Ι: έχω για παράδειγμα ένα input size για την test image = 1200. Τότε 1200/1600 = 0.75 scaling factor και αν επιπλέον αυτή την image την κάνω downscale by 4 (στα 300 pixels) τότε θα έχω 0.75/4 = 0.1875 
+                # που είναι ίσο με 300/1600 = 0.1875.
                 
                 # I: Intrinsic camera parameters for resized images: 
                 # I: Rescale the intrinsic matrix. For example, if the original camera image is 1280 x 960 and resized image is 320 x 240, the ratio is 1/4 and the focal length and principal point is scaled so.
