@@ -59,8 +59,8 @@ class DTUDataset(Dataset):
                                                  f'Cameras/{vid:08d}_cam.txt')
             intrinsics, extrinsics, depth_min = \
                 self.read_cam_file(proj_mat_filename)
-            if self.img_wh is not None: # resize the intrinsics to the coarsest level
-                intrinsics[0] *= self.img_wh[0]/1600/4
+            if self.img_wh is not None: # resize the intrinsics to the coarsest level                
+                intrinsics[0] *= self.img_wh[0]/1600/4       # I: dividing the focal length parameters you relate them to the image resolution (normalized by the number of pixels per unit length, pixels/mm)
                 intrinsics[1] *= self.img_wh[1]/1200/4
 
             # multiply intrinsics and extrinsics to get projection matrix
