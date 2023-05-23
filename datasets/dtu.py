@@ -90,6 +90,7 @@ class DTUDataset(Dataset):
         return intrinsics, extrinsics, depth_min
 
     def read_depth(self, filename):
+        # I: from MVSNet: "we downsize the image resolution from 1600x1200 to 800x600 and then crop the image patch with W=640 and H=512 from the center." 
         depth = np.array(read_pfm(filename)[0], dtype=np.float32) # (1200, 1600)
         if self.img_wh is None: # I: when we train it is None 
             depth = cv2.resize(depth, None, fx=0.5, fy=0.5,
