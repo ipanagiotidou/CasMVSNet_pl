@@ -68,6 +68,7 @@ class DTUDataset(Dataset):
                 # Info: the camera parameters (intrinsics) are known for image of size HxW. If I want to use a smaller image, say H/2, W/2 (half of the original), then ... 
                 # ... I need to multiply the first two rows of K matrix (params: focal lenght, and principal point) by the downscaling factor of 0.5 in this case. 
                 # Θυμήσου το σχήμα όπου αν απομακρυνθεί το image plane από το principal point 2 φορές (scaling factor = 2), τότε τόσο το focal length μεγαλώνει κατά 2 και οι συντεταγμένες του σημείου απομακρύνονται από την αρχή των αξόνων του image plane.   
+                # Αντίστοιχα, αν μικρύνεις την απόσταση από το image plane, και το focal length και η απόσταση από την αρχή των αξόνων μικραίνει. 
                 
 
             # multiply intrinsics and extrinsics to get projection matrix
