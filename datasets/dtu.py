@@ -60,6 +60,7 @@ class DTUDataset(Dataset):
             intrinsics, extrinsics, depth_min = \
                 self.read_cam_file(proj_mat_filename)
             if self.img_wh is not None: # resize the intrinsics to the coarsest level                
+                # I: Normalizing the intrinsic matrix with the image resolution is particularly useful when working with multiple images of different sizes, or when performing operations that involve resizing or resampling the images.
                 intrinsics[0] *= self.img_wh[0]/1600/4       # I: This normalization ensures that the intrinsic matrix remains consistent regardless of the image resolution being used (making it independent of the specific image size).
                 intrinsics[1] *= self.img_wh[1]/1200/4
 
