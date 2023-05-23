@@ -59,7 +59,7 @@ class DTUDataset(Dataset):
                                                  f'Cameras/{vid:08d}_cam.txt')
             intrinsics, extrinsics, depth_min = \
                 self.read_cam_file(proj_mat_filename)
-            if self.img_wh is not None: # resize the intrinsics to the coarsest level                
+            if self.img_wh is not None: # resize the intrinsics to the coarsest level   (I: means we are not in the training mode)          
                 # I: Normalizing the intrinsic matrix with the image resolution is particularly useful when working with multiple images of different sizes, or when performing operations that involve resizing or resampling the images.
                 # Ι: the camera parameters are in [pixel] units. fx is the focal length [in pixels] = physical Focal lenght [mm] * image size [the image width in pixels / width W in millimiters = pixels/mm] (με την απλή μέθοδο των τριών). 
                 intrinsics[0] *= self.img_wh[0]/1600/4       # I: This normalization [pixels/pixels] ensures that the intrinsic matrix remains consistent regardless of the image resolution being used (making it independent of the specific image size).
