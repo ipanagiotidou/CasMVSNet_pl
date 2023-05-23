@@ -60,11 +60,10 @@ class DTUDataset(Dataset):
             intrinsics, extrinsics, depth_min = \
                 self.read_cam_file(proj_mat_filename)
             # I: if img_wh is not None, it means we are in test mode 
-            if self.img_wh is not None: # resize the intrinsics to the coarsest level
-                # I: Normalizing the intrinsic matrix with the image resolution is particularly useful when working with multiple images of different sizes, or when performing operations that involve resizing or resampling the images.
-                # Ι: the camera parameters are in [pixel] units. fx is the focal length [in pixels] = physical Focal lenght [mm] * image size [the image width in pixels / width W in millimiters = pixels/mm] (με την απλή μέθοδο των τριών). 
-                intrinsics[0] *= self.img_wh[0]/1600/4       # I: This normalization [pixels/pixels] ensures that the intrinsic matrix remains consistent regardless of the image resolution being used (making it independent of the specific image size).
-                intrinsics[1] *= self.img_wh[1]/1200/4
+            if self.img_wh is not None: # resize the intrinsics to the coarsest level  
+                # This operation adjusts the intrinsic matrix by scaling its values based on the downscaling factors. It ensures that the intrinsics remain consistent with the current image size. 
+                intrinsics[0] *= self.img_wh[0]/1600/4       # I: dividing the img_width (current image width)/ 1600 (original image width) calculates the scaling factor by which the current image differs from the refence image (0.5 for example). 
+                intrinsics[1] *= self.img_wh[1]/1200/4       # I: dividing again with a scaling factor of 4 it suggests that the current image has been downscaled 4 times compared to the reference width. 
 
             # multiply intrinsics and extrinsics to get projection matrix
             proj_mat_ls = []
