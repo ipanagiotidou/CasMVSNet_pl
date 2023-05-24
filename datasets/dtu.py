@@ -67,7 +67,7 @@ class DTUDataset(Dataset):
                 # Ι: έχω για παράδειγμα ένα input size για την test image = 1200. Τότε 1200/1600 = 0.75 scaling factor και αν επιπλέον αυτή την image την κάνω downscale by 4 (στα 300 pixels) τότε θα έχω 0.75/4 = 0.1875 
                 # που είναι ίσο με 300/1600 = 0.1875.
                 
-                # I: Intrinsic camera parameters for resized images: * Cropping FROM THE CENTER has No Effect.
+                # I: Intrinsic camera parameters for resized images: * Cropping FROM THE CENTER has No Effect (The principle point is still in the center).
                 # I: Rescale the intrinsic matrix. For example, if the original camera image is 1280 x 960 and resized image is 320 x 240, the ratio is 1/4 and the focal length and principal point is scaled so.
                 # Αν απομακρυνθεί το image plane από το principal point 2 φορές (scaling factor = 2), τότε τόσο το focal length μεγαλώνει κατά 2 και οι συντεταγμένες του σημείου απομακρύνονται από την αρχή των αξόνων του image plane.   
                 
