@@ -149,6 +149,7 @@ class DTUDataset(Dataset):
 
         return masks
 
+    # Changes: read only --> do not scale
     def read_semantic(self, filename):
         mask = cv2.imread(filename, 0) # (1200, 1600)
         if self.img_wh is None: # when we train it is None 
@@ -169,6 +170,7 @@ class DTUDataset(Dataset):
 
         return semantics   
     
+    # Changes: read only --> do not scale
     def read_planar_mask(self, filename):
         mask = cv2.imread(filename, 0) # (1200, 1600)
         if self.img_wh is None: # when we train it is None 
