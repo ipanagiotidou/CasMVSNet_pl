@@ -72,6 +72,9 @@ class DTUDataset(Dataset):
                 # I: Rescale the intrinsic matrix. For example, if the original camera image is 1280 x 960 and resized image is 320 x 240, the ratio is 1/4 and the focal length and principal point is scaled so.
                 # Αν απομακρυνθεί το image plane από το principal point 2 φορές (scaling factor = 2), τότε τόσο το focal length μεγαλώνει κατά 2 και οι συντεταγμένες του σημείου απομακρύνονται από την αρχή των αξόνων του image plane.   
                 
+                # Intuitively, among intrinsic parameters, the focal length and principal point of the resized image can be calculated by just scaling as resizing ratio.  
+                # For example, if the original camera image is 1280 x 960 and resized image is 320 x 240, the ratio is 1/4 and the focal length and principal point is scaled so.
+                
                 # Example:
                 # Let's say you have resized image (cv2.resize) and changed aspect ratio. e.g. was 1242 x 375 now 512 x 256. 
                 # Then you need to multiply first row (x) with width scale scale_x = 512 / 1242 and second row with height scale scale_y = 256 / 375
