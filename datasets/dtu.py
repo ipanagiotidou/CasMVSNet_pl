@@ -61,7 +61,8 @@ class DTUDataset(Dataset):
                 self.read_cam_file(proj_mat_filename)
             # I: if img_wh is not None, it means we are in test mode 
             if self.img_wh is not None: # resize the intrinsics to the coarsest level  
-                # This operation adjusts the intrinsic matrix by scaling its values based on the downscaling factors. It ensures that the intrinsics remain consistent with the current image size. 
+                # I: intrinsic camera parameters are needed for calculating the projection of 3D point on to the image plane
+                # I: This operation adjusts the intrinsic matrix by scaling its values based on the downscaling factors. It ensures that the intrinsics remain consistent with the current image size. 
                 intrinsics[0] *= self.img_wh[0]/1600/4       # I: dividing the img_width (current image width)/ 1600 (original image width) calculates the scaling factor by which the current image differs from the refence image (0.5 for example). 
                 intrinsics[1] *= self.img_wh[1]/1200/4       # I: dividing again with a scaling factor of 4 it suggests that the current image has been downscaled 4 times compared to the reference width. 
                 # Ι: έχω για παράδειγμα ένα input size για την test image = 1200. Τότε 1200/1600 = 0.75 scaling factor και αν επιπλέον αυτή την image την κάνω downscale by 4 (στα 300 pixels) τότε θα έχω 0.75/4 = 0.1875 
