@@ -87,6 +87,7 @@ class DTUDataset(Dataset):
             for l in reversed(range(self.levels)): # values go from {2 --> 1 --> 0} 
                 proj_mat_l = np.eye(4)
                 proj_mat_l[:3, :4] = intrinsics @ extrinsics[:3, :4]
+                # has postpreprocessed the image size and intrinsic matrices for the training dataset
                 intrinsics[:2] *= 2 # 1/4->1/2->1   # I: we upscale (double) the focal length and shift the principal point to match the upscaled image size. 
                 proj_mat_ls += [torch.FloatTensor(proj_mat_l)]
             # (self.levels, 4, 4) from fine to coarse
