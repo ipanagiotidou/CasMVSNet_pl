@@ -67,7 +67,7 @@ class DTUDataset(Dataset):
                 # Ι: έχω για παράδειγμα ένα input size για την test image = 1200. Τότε 1200/1600 = 0.75 scaling factor και αν επιπλέον αυτή την image την κάνω downscale by 4 (στα 300 pixels) τότε θα έχω 0.75/4 = 0.1875 
                 # που είναι ίσο με 300/1600 = 0.1875.
                 
-                # I: Intrinsic camera parameters for resized images: * Cropping has No Effect.
+                # I: Intrinsic camera parameters for resized images: * Cropping FROM THE CENTER has No Effect.
                 # I: Rescale the intrinsic matrix. For example, if the original camera image is 1280 x 960 and resized image is 320 x 240, the ratio is 1/4 and the focal length and principal point is scaled so.
                 # Αν απομακρυνθεί το image plane από το principal point 2 φορές (scaling factor = 2), τότε τόσο το focal length μεγαλώνει κατά 2 και οι συντεταγμένες του σημείου απομακρύνονται από την αρχή των αξόνων του image plane.   
                 
@@ -105,7 +105,7 @@ class DTUDataset(Dataset):
         return intrinsics, extrinsics, depth_min
 
     def read_depth(self, filename):
-        # I: from MVSNet: "we downsize the image resolution from 1600x1200 to 800x600 and then crop the image patch with W=640 and H=512 from the center. The input CAMERA PARAMS are changed accordingly." 
+        # I: from MVSNet: "we downsize the image resolution from 1600x1200 to 800x600 and then CROP the image patch with W=640 and H=512 FROM THE CENTER. The input CAMERA PARAMS are changed accordingly." 
         depth = np.array(read_pfm(filename)[0], dtype=np.float32) # (1200, 1600)
         if self.img_wh is None: # I: when we train it is None 
             depth = cv2.resize(depth, None, fx=0.5, fy=0.5,
