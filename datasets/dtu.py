@@ -131,7 +131,7 @@ class DTUDataset(Dataset):
         return depths
 
     def read_mask(self, filename):
-        mask = cv2.imread(filename, 0) # (1200, 1600)   # returns a <class 'numpy.ndarray'>  uint8  with unique values [0 255]
+        mask = cv2.imread(filename, 0) # (1200, 1600)   # returns a <class 'numpy.ndarray'>  uint8, shape=(128, 160, 3) with unique values [0 255]
         if self.img_wh is None: # when we train it is None 
             mask = cv2.resize(mask, None, fx=0.5, fy=0.5,
                             interpolation=cv2.INTER_NEAREST) # (600, 800)
