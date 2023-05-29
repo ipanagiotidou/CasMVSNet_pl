@@ -23,8 +23,8 @@ def get_opts():
     parser.add_argument('--root_dir', type=str,
                         default='/home/ubuntu/data/DTU/mvs_training/dtu/',
                         help='root directory of dtu dataset')
-    parser.add_argument('--dataset_name', type=str, default='dtu',
-                        choices=['dtu', 'tanks', 'blendedmvs'],
+    parser.add_argument('--dataset_name', type=str, default='eth3d',
+                        choices=['dtu', 'tanks', 'blendedmvs', 'eth3d'],
                         help='which dataset to train/val')
     parser.add_argument('--split', type=str, default='test',
                         help='which split to evaluate')
