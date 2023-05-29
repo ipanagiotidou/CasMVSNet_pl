@@ -6,8 +6,8 @@ def get_opts():
     parser.add_argument('--root_dir', type=str,
                         default='/home/ubuntu/data/mvs_training/dtu/',
                         help='root directory of dtu dataset')
-    parser.add_argument('--dataset_name', type=str, default='dtu',
-                        choices=['dtu', 'blendedmvs'],
+    parser.add_argument('--dataset_name', type=str, default='eth3d',
+                        choices=['dtu', 'blendedmvs', 'eth3d'],
                         help='which dataset to train/val')
     parser.add_argument('--n_views', type=int, default=3,
                         help='number of views (including ref) to be used in training')
