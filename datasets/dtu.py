@@ -12,6 +12,7 @@ class DTUDataset(Dataset):
                  img_wh=None):
         """
         img_wh should be set to a tuple ex: (1152, 864) to enable test mode!
+        # I: in the CasMVSNet paper it says under Table 1: "Results: Ours uses resolution of 1152x864." 
         """
         self.root_dir = root_dir
         self.split = split
