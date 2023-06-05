@@ -114,6 +114,8 @@ class DTUDataset(Dataset):
         # I: from MVSNet: "we downsize the image resolution from 1600x1200 to 800x600 and then CROP the image patch with W=640 and H=512 FROM THE CENTER. The input CAMERA PARAMS are changed accordingly." 
         depth = np.array(read_pfm(filename)[0], dtype=np.float32) # (1200, 1600)
         if self.img_wh is None: # I: when we train it is None 
+            # I: from the paper: "During training, we set the image resolution to 640x512."
+            # I: kwea has post-processed the training samples and intrinsics 
             depth = cv2.resize(depth, None, fx=0.5, fy=0.5,
                             interpolation=cv2.INTER_NEAREST) # (600, 800)   # I: with resizing the number of pixels gets smaller (half here, from 1200 to 600 in one dimension). The image becomes smaller but the FOV remains the same. 
             depth_0 = depth[44:556, 80:720] # (512, 640)                    # I: we crop it. The image resolution is set to (640 x 512).
