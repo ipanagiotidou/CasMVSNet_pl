@@ -221,7 +221,7 @@ class DTUDataset(Dataset):
         for i, vid in enumerate(view_ids):
             # NOTE that the id in image file names is from 1 to 49 (not 0~48)
             if self.img_wh is None:
-                img_filename = os.path.join(self.root_dir, f'Rectified/{scan}_train/rect_{vid+1:03d}_{light_idx}_r5000.png')
+                img_filename = os.path.join(self.root_dir, f'Rectified/{scan}_train/rect_{vid+1:03d}_{light_idx}_r5000.png') # I: when I don't know the light_idx I can do light_idx = "*"
                 mask_filename = os.path.join(self.root_dir, f'Depths/{scan}/depth_visual_{vid:04d}.png')
                 depth_filename = os.path.join(self.root_dir, f'Depths/{scan}/depth_map_{vid:04d}.pfm')
                 # QUESTION: do I want to infer different semantics for every image with different lighting conditions? 
