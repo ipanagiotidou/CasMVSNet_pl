@@ -1,7 +1,5 @@
 from torch.utils.data import Dataset
-#from .utils import * # me: this doesn't work when running from the terminal
-# from utils import * # me: this works when running from the terminal
-from .utils import read_pfm # kwea
+from .utils import read_pfm 
 import os
 import glob
 import numpy as np
@@ -51,36 +49,31 @@ class DTUDataset(Dataset):
 
                     
     def build_proj_mats(self):
-        self.scale_factors = {}  # scale factor of distances for each scan in order to use a common accuracy metric for all datasets
-        proj_mats = []
-        self.dict_scan_proj_mats = {}
-        self.depth_min_scan = {}
+        self.proj_mats = {} # proj mats for each scan
+        self.scale_factors = {}  # depth scale factors for each scan 
 
         for scan in self.scans:
-            all_depth_mins_scan = [] # collect all depth_mins of each image (viewpoint) for each scan
-            viewpoints = self.num_viewpoints_per_scan[scan]  
+            self.proj_mats[scan] = {}
             
-            for vid in range(0, viewpoints):  # for facade images/viewpoints (76)
+            viewpoints = self.num_viewpoints_per_scan[scan]   # for facade images/viewpoints (76)
+            for vid in range(0, viewpoints): 
                 proj_mat_filename = glob.glob(os.path.join(self.root_dir, f'Cameras/{scan}/train/DSC_*_id{vid+1:04d}_cam.txt'))[0] # returns a list
                 intrinsics, extrinsics, depth_min = self.read_cam_file(scan, proj_mat_filename)
-                # save the depth min of the specific viewpoint (image)
-                all_depth_mins_scan.append(depth_min)
 
                 # resize the intrinsics to the coarsest level
                 intrinsics[0] *= 1440 / 4  # width (x)
                 intrinsics[1] *= 960 / 4   # height (y)
 
-                # 3-levels (same viewpoint)
+                # same viewpoint projection matrix for 3-levels
                 proj_mat_ls = []
                 for l in reversed(range(self.levels)):  # 2-->1-->0
                     proj_mat_l = np.eye(4)
                     proj_mat_l[:3, :4] = intrinsics @ extrinsics[:3, :4]
                     intrinsics[:2] *= 2  # 1/4->1/2->1
                     proj_mat_ls += [torch.FloatTensor(proj_mat_l)] # appends new tensor to list. [tensor_l2, tensor_l1, tensor_l0]
-                proj_mat_ls = torch.stack(proj_mat_ls[::-1]) # torch.Size([3, 4, 4]) # 3-levels, 4x4 projection matrix from fine to coarse # 0-->1-->2
-                proj_mats += [proj_mat_ls]  # list of all projection matrices (3-scale) of all viewpoints (images) of scan 
-            self.dict_scan_proj_mats[scan] = proj_mats  # Saves to dictionary the list containing all the proj mats (of all viewpoints) for each scan 
-            self.depth_min_scan[scan] = min(all_depth_mins_scan)  # global depth main of each scan.
+                # (self.levels, 4, 4) from fine to coarse 0-->1-->2
+                proj_mat_ls = torch.stack(proj_mat_ls[::-1]) # torch.Size([3, 4, 4]) 
+                self.proj_mats[scan][vid] = (proj_mat_ls, depth_min)    # double dictionary          
 
 
     def read_cam_file(self, scan, filename):
@@ -97,7 +90,8 @@ class DTUDataset(Dataset):
         if scan not in self.scale_factors:
             # use the first cam to determine scale factor for each scan.
             self.scale_factors[scan] = 100/depth_min  # scale * depth_min = 100
-
+        
+        # unique depth min, common scaling factor 
         depth_min *= self.scale_factors[scan]
         extrinsics[:3, 3] *= self.scale_factors[scan] # scales the translation vector too (col 4th).
         return intrinsics, extrinsics, depth_min
@@ -115,7 +109,7 @@ class DTUDataset(Dataset):
                   "level_1": torch.FloatTensor(depth_1),
                   "level_2": torch.FloatTensor(depth_2)}
 
-        # finds maximum depth (distance)
+        # finds maximum depth (distance) of the specific viewpoint
         depth_max = depth_0.max()
         return depths, depth_max
 
@@ -142,58 +136,49 @@ class DTUDataset(Dataset):
 
 
     def __getitem__(self, idx):
-        # NOTE: Let's clarify something. The index is
         sample = {}
-        scan, ref_view, src_views = self.metas[idx] # Κανονικά είναι ('facade', 11, [14, 15, 10, 9, 8, 16, 2, 18, 1, 7]) αλλά ΕΧΩ ('facade', 10, [13, 14, 9, 8, 7, 15, 1, 17, 0, 6])
-        # use only the reference view and first nviews-1 source views
-        view_ids = [ref_view] + src_views[:self.n_views - 1]  # λίστα με [ref view, src1, src2] = [10, 13, 14]
+        scan, ref_view, src_views = self.metas[idx] 
+        view_ids = [ref_view] + src_views[:self.n_views - 1]  # [ref view, src1, src2] indices
 
-        imgs = []       # the 3 images (ref_view, src1, src2)
-        proj_mats = []  # records proj mats between views
-        for i, vid in enumerate(view_ids): # repeats for all 3 views (ref, src1, src2)
-            # i = 0, 1, 2 # vid = 10, 13, 14 (e.g.)
-            # NOTE (kwea but applies to me too) that the id in image file names is from 1 to 49 (not 0~48). So he does vid+1.
-            if self.img_wh is None:
-                img_filename = glob.glob(os.path.join(self.root_dir, f'Rectified/{scan}/rect_DSC_*_id{vid+1:04d}.png'))[0]
-                mask_filename = glob.glob(os.path.join(self.root_dir, f'Depths/{scan}/seg_depth_visual_DSC_*_id{vid+1:04d}.png'))[0]
-                depth_filename = glob.glob(os.path.join(self.root_dir, f'Depths/{scan}/interp_depth_map_DSC_*_id{vid+1:04d}.pfm'))[0]
-                # print("img filename: ", img_filename)
-                #print("mask filename: ", mask_filename)
-                #print("depth filename: ", depth_filename)
-            else:
-                img_filename = glob.glob(os.path.join(self.root_dir, f'Rectified/{scan}_eval/rect_DSC_*_id{vid+1:04d}.png'))[0]
+        imgs = []       # 3 images: [ref_view, src1, src2]
+        proj_mats = []  # homography matrices (record proj mats between views)
+        
+        for i, vid in enumerate(view_ids): # repeats for all 3 views 
 
-            img = Image.open(img_filename)  # has opened the 3 images (when loop has finished)
+            # the id in image file names is from 1 to ... (not 0~...). Use vid+1. 
+            img_filename = glob.glob(os.path.join(self.root_dir, f'Rectified/{scan}/rect_DSC_*_id{vid+1:04d}.png'))[0]
+            depth_filename = glob.glob(os.path.join(self.root_dir, f'Depths/{scan}/interp_depth_map_DSC_*_id{vid+1:04d}.pfm'))[0]
+            mask_filename = glob.glob(os.path.join(self.root_dir, f'Depths/{scan}/seg_depth_visual_DSC_*_id{vid+1:04d}.png'))[0]
+            
+            img = Image.open(img_filename)  
             img = self.transform(img)
-            imgs += [img]   # list of 3 images (one reference, src1, src2) --> So collects all 3 images, but only the mask, depth, and depth_min of the reference.
+            imgs += [img]   # 3 images: [ref_view, src1, src2]
 
-            # for all 3 views (ref, src1, src2) collects the projection matrices.
-            proj_mat_ls = self.dict_scan_proj_mats[scan][vid]  # collects the list containing the projection matrices of each scan and then indexes the specific viewpoint. All 3 levels.
+            # collects the projection matrices of all 3 views (ref, src1, src2) by the end of the loop 
+            proj_mat_ls, depth_min = self.proj_mats[scan][vid]
+            
+            if i == 0:  # reference view            
+                # Collects only the mask image, depth map, and depth_min of the reference viewpoint.
 
-            # inside the list loop (first index is the ref view)
-            if i == 0:  # reference view (the first element in the list)
-                # Collects only the mask, depth, and depth_min of the reference.
-                if self.img_wh is None:
-                    # read the depth map and mask image of the reference view. Define the depth interval of the MVS.
-                    sample['masks'] = self.read_mask(mask_filename)
-                    sample['depths'], depth_max = self.read_depth(scan, depth_filename)
+                sample['masks'] = self.read_mask(mask_filename)
+                sample['depths'], depth_max = self.read_depth(scan, depth_filename)
 
-                    sample['init_depth_min'] = torch.FloatTensor([self.depth_min_scan[scan]])
-                    depth_interval = (depth_max - sample['init_depth_min'] ) / self.n_depths
-                    print('depth interval: ', depth_interval)
-                    sample['depth_interval'] = torch.FloatTensor([depth_interval])  # per scan. save in init after I find it.
+                # Define the depth interval of the MVS.                
+                depth_interval = (depth_max - depth_min) / self.n_depths
+                sample['init_depth_min'] = torch.FloatTensor([depth_min])
+                sample['depth_interval'] = torch.FloatTensor([depth_interval])  
+                print("depth interval: ", depth_interval)
 
                 ref_proj_inv = torch.inverse(proj_mat_ls)
             else:
-                proj_mats += [proj_mat_ls @ ref_proj_inv]  # a list containing two elements. The two final projection matrices of the two source images, based on the reference proj mat.
+                proj_mats += [proj_mat_ls @ ref_proj_inv]  # contains two elements.
 
         imgs = torch.stack(imgs)  # (V=3, 3, H, W)
         proj_mats = torch.stack(proj_mats)[:, :, :3]  # (V-1, self.levels, 3, 4) from fine to coarse
         # V-1 CAUSE IT CONTAINS ONLY THE TWO FINAL PROJ MATRICES OF THE TWO SOURCE IMAGES. BASED ON THE REFERENCE PROJ MAT.
 
-        sample['imgs'] = imgs # (V=3, 3, H, W)
+        sample['imgs'] = imgs # (V, 3, H, W)
         sample['proj_mats'] = proj_mats  # (V-1, self.levels, 3, 4)
-        # sample['depth_interval'] = torch.FloatTensor([self.depth_interval]) # per scan. save in init after I find it.
         sample['scan_vid'] = (scan, ref_view) # vid stands for viewid.
 
         return sample
