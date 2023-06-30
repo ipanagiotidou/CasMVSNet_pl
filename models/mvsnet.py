@@ -218,10 +218,11 @@ class CascadeMVSNet(nn.Module):
                     depth_values = init_depth_min + depth_interval_l * \
                                    torch.arange(0, D,
                                                 device=imgs.device,
-                                                dtype=imgs.dtype) # (D) # I: hypothesis depths # I: returns a 1-D tensor with values from [depth_min, depth_max). Step is depth_interval.
+                                                dtype=imgs.dtype) # (D)   # probably 1d Tensor for each pixel # I: all hypothesis depths (for each pixel). Values from [depth_min, depth_max) with Step = depth_interval.
                     depth_values = rearrange(depth_values, 'd -> 1 d 1 1')
                     depth_values = repeat(depth_values, '1 d 1 1 -> b d h w', b=B, h=h, w=w)  # B is the batch. Repeat for each batch: each depth hypothesis value is repeated along the spatial dimension. D acts as the number of channels.
                 else:
+                    # I: if not the coarsest level, it should form the depth hypothesis based on the previous level's depth prediction 
                     depth_values = init_depth_min + depth_interval_l * \
                                    rearrange(torch.arange(0, D,
                                                           device=imgs.device,
@@ -230,7 +231,10 @@ class CascadeMVSNet(nn.Module):
                     depth_values = rearrange(depth_values, 'b d -> b d 1 1')
                     depth_values = repeat(depth_values, 'b d 1 1 -> b d h w', h=h, w=w)
                     
-            else:  # I: if not the coarsest level (first the network predicts the coarsest depth map, it then upscales it using interpolation to get the depth values that will constitute a starting point for next level)
+            else:  # I: if not the coarsest level 
+                # First the network predicts the coarsest depth map, it then upscales it using interpolation to get the new depth values that will constitute a starting point for next level.
+                # To do so it detaches the previous level from the graph and once she gets the depth values (which are now not from depth min to depth max, but are more refined and closer to the actual prediction) she deletes the new vatriable. 
+                # The depth values are passed to the 'predict_depth' function. 
                 depth_lm1 = depth_l.detach() # Detaches the depth of previous level 
                 depth_lm1 = F.interpolate(rearrange(depth_lm1, 'b h w -> b 1 h w'),
                                           scale_factor=2, mode='bilinear',
@@ -238,7 +242,9 @@ class CascadeMVSNet(nn.Module):
                 depth_values = get_depth_values(depth_lm1, D, depth_interval_l)   # I: get_depth_values(current_depth, n_depths, depth_interval) # each level has its own n_depths[l], depth_interval and current depth is the depth of the previous level 
                 del depth_lm1
             
-            # I: when coarse level (l=2) the first time, we pass the B volumes with the initial depth hypothesis (depth_values).
+            # I: when coarse level (l=2) the first time, we pass the B volumes with the initial depth hypothesis (depth_values from depth min to depth max).
+            # I: when not the coarsest level, we pass the depth_values from the predicted depth map of the coarsest level to act as the basis to find the new depth prediction for the new level.
+            
             depth_l, confidence_l = self.predict_depth(feats_l, proj_mats_l, depth_values,
                                                        getattr(self, f'cost_reg_{l}'))
             del feats_l, proj_mats_l, depth_values
