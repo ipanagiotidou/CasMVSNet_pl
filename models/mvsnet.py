@@ -235,7 +235,7 @@ class CascadeMVSNet(nn.Module):
                 # First the network predicts the coarsest depth map, it then upscales it using interpolation to get the new depth values that will constitute a starting point for next level.
                 # To do so it detaches the previous level from the graph and once she gets the depth values (which are now not from depth min to depth max, but are more refined and closer to the actual prediction) she deletes the new vatriable. 
                 # The depth values are passed to the 'predict_depth' function. 
-                depth_lm1 = depth_l.detach() # Detaches the depth of previous level 
+                depth_lm1 = depth_l.detach() # Detaches the depth of previous level # Has already returned it 
                 depth_lm1 = F.interpolate(rearrange(depth_lm1, 'b h w -> b 1 h w'),
                                           scale_factor=2, mode='bilinear',
                                           align_corners=True) # (B, 1, h, w)  # upscales by 2 the predicted depth map using interpolation 
